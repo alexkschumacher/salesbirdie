@@ -33,26 +33,16 @@
     "Cold Calls", "Meetings", "Proposals", "Close Meetings", "Growth POs", "Existing Client Calls", "Maintenance POs"
   ];
 
-  /* ========== AUTH SYSTEM (in-memory) ========== */
+  /* ========== SUPABASE CLIENT ========== */
+  var SUPABASE_URL = "https://fpbcxfdllgqpwreyycgb.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmN4ZmRsbGdxcHdyZXl5Y2diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTk0OTQsImV4cCI6MjA4ODQ5NTQ5NH0.nRNi_DUh4-T-8MGc2yDyr7FCLl0RD3IoIDF3Uoy0qmg";
+  var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ========== AUTH STATE (local cache, populated from Supabase) ========== */
   var authState = {
     currentUser: null, // { email, name, title, isManager, teamId }
-    users: [],         // [{ email, name, title, password, isManager, teamId, parentUserId }]
+    users: [],         // [{ email, name, title, isManager, teamId, parentUserId }]
     teams: {}          // { teamId: { managerId: email, members: [email...] } }
-  };
-
-  // Seed a demo manager account for convenience
-  authState.users.push({
-    email: "demo@salesbirdie.io",
-    name: "Demo Manager",
-    title: "Sales Director",
-    password: "demo",
-    isManager: true,
-    teamId: "team_demo",
-    parentUserId: null
-  });
-  authState.teams["team_demo"] = {
-    managerId: "demo@salesbirdie.io",
-    members: ["demo@salesbirdie.io"]
   };
 
   /* ========== QUARTER CONSTANTS ========== */
@@ -754,6 +744,8 @@
   }
 
   /* ========== AUTH FUNCTIONS ========== */
+
+  // Find user in local cache (for team/rankings features)
   function findUser(email) {
     for (var i = 0; i < authState.users.length; i++) {
       if (authState.users[i].email.toLowerCase() === email.toLowerCase()) {
@@ -763,28 +755,118 @@
     return null;
   }
 
+  // Fetch profile from Supabase profiles table
+  function fetchProfile(userId) {
+    return supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single()
+      .then(function (res) { return res.data; });
+  }
+
+  // Fetch all profiles for the same team (for rankings, team page, etc.)
+  function fetchTeamProfiles(teamId) {
+    if (!teamId) return Promise.resolve([]);
+    return supabase
+      .from("profiles")
+      .select("*")
+      .eq("team_id", teamId)
+      .then(function (res) { return res.data || []; });
+  }
+
+  // Load a Supabase profile into authState.currentUser and cache
+  function setCurrentUserFromProfile(profile) {
+    authState.currentUser = {
+      email: profile.email,
+      name: profile.full_name,
+      title: profile.title || "",
+      isManager: profile.is_manager || false,
+      teamId: profile.team_id || null
+    };
+    // Also add to users cache if not already there
+    if (!findUser(profile.email)) {
+      authState.users.push({
+        email: profile.email,
+        name: profile.full_name,
+        title: profile.title || "",
+        isManager: profile.is_manager || false,
+        teamId: profile.team_id || null,
+        parentUserId: profile.parent_user_id || null
+      });
+    }
+  }
+
+  // Load all team members into local cache
+  function loadTeamCache(teamId) {
+    return fetchTeamProfiles(teamId).then(function (profiles) {
+      profiles.forEach(function (p) {
+        if (!findUser(p.email)) {
+          authState.users.push({
+            email: p.email,
+            name: p.full_name,
+            title: p.title || "",
+            isManager: p.is_manager || false,
+            teamId: p.team_id || null,
+            parentUserId: p.parent_user_id || null
+          });
+        }
+      });
+      // Build teams object
+      if (teamId) {
+        var manager = profiles.find(function (p) { return p.is_manager; });
+        authState.teams[teamId] = {
+          managerId: manager ? manager.email : "",
+          members: profiles.map(function (p) { return p.email; })
+        };
+      }
+    });
+  }
+
   function handleSignIn(e) {
     e.preventDefault();
     var email = document.getElementById("signinEmail").value.trim();
     var password = document.getElementById("signinPassword").value;
     var errorEl = document.getElementById("signinError");
+    var submitBtn = e.target.querySelector(".auth-submit");
 
-    var user = findUser(email);
-    if (!user || user.password !== password) {
-      errorEl.textContent = "Invalid email or password.";
-      errorEl.style.display = "";
-      return;
-    }
-
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing in...";
     errorEl.style.display = "none";
-    authState.currentUser = {
-      email: user.email,
-      name: user.name,
-      title: user.title || "",
-      isManager: user.isManager,
-      teamId: user.teamId || null
-    };
-    showApp();
+
+    supabase.auth.signInWithPassword({ email: email, password: password })
+      .then(function (result) {
+        if (result.error) {
+          errorEl.textContent = result.error.message || "Invalid email or password.";
+          errorEl.style.display = "";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In";
+          return;
+        }
+
+        var user = result.data.user;
+        return fetchProfile(user.id).then(function (profile) {
+          if (!profile) {
+            errorEl.textContent = "Account exists but profile not found. Please contact support.";
+            errorEl.style.display = "";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Sign In";
+            return;
+          }
+          setCurrentUserFromProfile(profile);
+          return loadTeamCache(profile.team_id).then(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Sign In";
+            showApp();
+          });
+        });
+      })
+      .catch(function (err) {
+        errorEl.textContent = err.message || "Something went wrong. Try again.";
+        errorEl.style.display = "";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign In";
+      });
   }
 
   function handleSignUp(e) {
@@ -795,6 +877,7 @@
     var title = (document.getElementById("signupTitle").value || "").trim();
     var isManager = document.getElementById("signupIsManager").checked;
     var errorEl = document.getElementById("signupError");
+    var submitBtn = e.target.querySelector(".auth-submit");
 
     if (!title) {
       errorEl.textContent = "Title is required.";
@@ -802,40 +885,145 @@
       return;
     }
 
-    if (findUser(email)) {
-      errorEl.textContent = "An account with this email already exists.";
-      errorEl.style.display = "";
-      return;
-    }
-
-    var teamId = null;
-    if (isManager) {
-      teamId = "team_" + Date.now();
-      authState.teams[teamId] = {
-        managerId: email,
-        members: [email]
-      };
-    }
-
-    authState.users.push({
-      email: email,
-      name: name,
-      title: title,
-      password: password,
-      isManager: isManager,
-      teamId: teamId,
-      parentUserId: null
-    });
-
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account...";
     errorEl.style.display = "none";
-    authState.currentUser = {
+
+    // Sign up with Supabase Auth
+    supabase.auth.signUp({
       email: email,
-      name: name,
-      title: title,
-      isManager: isManager,
-      teamId: teamId
-    };
-    showApp();
+      password: password,
+      options: {
+        data: {
+          full_name: name,
+          title: title,
+          is_manager: isManager
+        }
+      }
+    })
+      .then(function (result) {
+        if (result.error) {
+          errorEl.textContent = result.error.message || "Sign up failed.";
+          errorEl.style.display = "";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Account";
+          return;
+        }
+
+        var user = result.data.user;
+
+        // Check if email confirmation is required
+        if (user && !result.data.session) {
+          errorEl.textContent = "Check your email for a confirmation link, then sign in.";
+          errorEl.style.display = "";
+          errorEl.style.color = "var(--color-success)";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Account";
+          return;
+        }
+
+        // Check if there's a pending invite profile for this email
+        return supabase
+          .from("profiles")
+          .select("*")
+          .eq("email", email)
+          .eq("is_pending", true)
+          .single()
+          .then(function (pendingResult) {
+            var pending = pendingResult.data;
+
+            if (pending) {
+              // Invited user: update the pending profile with the real auth id
+              return supabase
+                .from("profiles")
+                .update({
+                  id: user.id,
+                  full_name: name,
+                  title: title || pending.title,
+                  is_manager: pending.is_manager,
+                  is_pending: false
+                })
+                .eq("email", email)
+                .select()
+                .single()
+                .then(function (updateResult) {
+                  var profile = updateResult.data || pending;
+                  profile.id = user.id;
+                  profile.is_pending = false;
+                  setCurrentUserFromProfile(profile);
+                  return loadTeamCache(profile.team_id).then(function () {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Create Account";
+                    showApp();
+                  });
+                });
+            }
+
+            // No invite found: create a fresh profile
+            var teamId = null;
+            if (isManager) {
+              teamId = "team_" + user.id.substring(0, 8);
+            }
+
+            return supabase
+              .from("profiles")
+              .insert({
+                id: user.id,
+                email: email,
+                full_name: name,
+                title: title,
+                is_manager: isManager,
+                team_id: teamId,
+                parent_user_id: null,
+                is_pending: false
+              })
+              .then(function (insertResult) {
+                if (insertResult.error) {
+                  console.error("Profile insert error:", insertResult.error);
+                  return fetchProfile(user.id).then(function (profile) {
+                    if (profile) {
+                      setCurrentUserFromProfile(profile);
+                      return loadTeamCache(profile.team_id).then(function () {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Create Account";
+                        showApp();
+                      });
+                    }
+                    errorEl.textContent = "Account created but profile setup failed. Please sign in.";
+                    errorEl.style.display = "";
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Create Account";
+                  });
+                }
+
+                setCurrentUserFromProfile({
+                  email: email,
+                  full_name: name,
+                  title: title,
+                  is_manager: isManager,
+                  team_id: teamId,
+                  parent_user_id: null
+                });
+
+                if (teamId) {
+                  authState.teams[teamId] = {
+                    managerId: email,
+                    members: [email]
+                  };
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Create Account";
+                showApp();
+              });
+          });
+      })
+      .catch(function (err) {
+        errorEl.textContent = err.message || "Something went wrong. Try again.";
+        errorEl.style.display = "";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Account";
+      });
   }
 
   /* ========== PER-USER STATE STORAGE ========== */
@@ -889,7 +1077,13 @@
   function handleLogout() {
     saveCurrentUserState();
     authState.currentUser = null;
-    showLanding();
+    authState.users = [];
+    authState.teams = {};
+    supabase.auth.signOut().then(function () {
+      showLanding();
+    }).catch(function () {
+      showLanding();
+    });
   }
 
   function showLanding() {
@@ -1966,7 +2160,7 @@
       return;
     }
 
-    // Check if already exists
+    // Check if already exists in local cache
     if (findUser(email)) {
       msgEl.textContent = "A user with this email already exists.";
       msgEl.style.display = "";
@@ -1974,34 +2168,59 @@
       return;
     }
 
-    // Create user account with parentUserId
     var teamId = authState.currentUser ? authState.currentUser.teamId : null;
     var parentEmail = authState.currentUser ? authState.currentUser.email : null;
-    authState.users.push({
-      email: email,
-      name: name,
-      title: title,
-      password: "welcome",
-      isManager: grantManager,
-      teamId: teamId,
-      parentUserId: parentEmail
-    });
-    if (teamId && authState.teams[teamId]) {
-      authState.teams[teamId].members.push(email);
-    }
 
-    msgEl.textContent = "Invited " + name + " (" + email + ") successfully. Default password: welcome";
-    msgEl.style.display = "";
-    msgEl.style.color = "var(--color-success)";
+    // Insert a pending profile in Supabase (no auth account yet)
+    // The invited person will create their own account via Sign Up,
+    // and will be linked to this team when their email matches.
+    supabase
+      .from("profiles")
+      .insert({
+        id: crypto.randomUUID(),
+        email: email,
+        full_name: name,
+        title: title,
+        is_manager: grantManager,
+        team_id: teamId,
+        parent_user_id: parentEmail,
+        is_pending: true
+      })
+      .then(function (result) {
+        if (result.error) {
+          // Might be a duplicate email
+          msgEl.textContent = result.error.message || "Could not invite this user.";
+          msgEl.style.display = "";
+          msgEl.style.color = "var(--color-error)";
+          return;
+        }
 
-    nameInput.value = "";
-    titleInput.value = "";
-    emailInput.value = "";
-    if (managerCheck) managerCheck.checked = false;
+        // Add to local cache
+        authState.users.push({
+          email: email,
+          name: name,
+          title: title,
+          isManager: grantManager,
+          teamId: teamId,
+          parentUserId: parentEmail
+        });
+        if (teamId && authState.teams[teamId]) {
+          authState.teams[teamId].members.push(email);
+        }
 
-    renderTeamRoster();
-    renderTeamSummary();
-    renderCoachingInsights();
+        msgEl.textContent = "Invited " + name + " (" + email + "). They can sign up to join your team.";
+        msgEl.style.display = "";
+        msgEl.style.color = "var(--color-success)";
+
+        nameInput.value = "";
+        titleInput.value = "";
+        emailInput.value = "";
+        if (managerCheck) managerCheck.checked = false;
+
+        renderTeamRoster();
+        renderTeamSummary();
+        renderCoachingInsights();
+      });
   }
 
   /* ========== TEAM ROSTER ========== */
@@ -2071,6 +2290,12 @@
     var user = findUser(email);
     if (user) {
       user.isManager = e.target.checked;
+      // Update in Supabase too
+      supabase
+        .from("profiles")
+        .update({ is_manager: e.target.checked })
+        .eq("email", email)
+        .then(function () { /* silent */ });
     }
     renderTeamRoster();
   }
@@ -2104,6 +2329,13 @@
     if (typeof userStateStore !== "undefined" && userStateStore[email]) {
       delete userStateStore[email];
     }
+
+    // Remove from Supabase (clear team assignment)
+    supabase
+      .from("profiles")
+      .update({ team_id: null, parent_user_id: null })
+      .eq("email", email)
+      .then(function () { /* silent */ });
 
     renderTeamRoster();
     renderTeamSummary();
@@ -2852,9 +3084,30 @@
 
   /* ========== GLOBAL INIT ========== */
   function init() {
-    // Always start with landing page
     initAuthForms();
-    showLanding();
+
+    // Check for existing Supabase session (auto-login returning users)
+    supabase.auth.getSession().then(function (result) {
+      var session = result.data && result.data.session;
+      if (session && session.user) {
+        fetchProfile(session.user.id).then(function (profile) {
+          if (profile) {
+            setCurrentUserFromProfile(profile);
+            loadTeamCache(profile.team_id).then(function () {
+              showApp();
+            });
+          } else {
+            showLanding();
+          }
+        }).catch(function () {
+          showLanding();
+        });
+      } else {
+        showLanding();
+      }
+    }).catch(function () {
+      showLanding();
+    });
   }
 
   if (document.readyState === "loading") {

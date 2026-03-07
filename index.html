@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="./base.css">
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./app.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -109,7 +110,7 @@
           </div>
           <div class="auth-field">
             <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" placeholder="Create a password" required minlength="4" autocomplete="new-password">
+            <input type="password" id="signupPassword" placeholder="Create a password (min 6 chars)" required minlength="6" autocomplete="new-password">
           </div>
           <div class="auth-field">
             <label for="signupTitle">Title</label>
