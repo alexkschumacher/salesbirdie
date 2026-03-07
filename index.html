@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>salesbirdie — field sales simplified</title>
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+
+<a href="#main-content" class="sr-only" style="position:absolute;top:0;left:0;padding:var(--space-2) var(--space-4);background:var(--color-primary);color:var(--color-text-inverse);z-index:1000;font-size:var(--text-sm);">Skip to content</a>
+
+<!-- ======= LANDING PAGE (shown when not logged in) ======= -->
+<div id="landingPage" class="landing-page">
+  <div class="landing-bg">
+    <img src="./assets/golf-bg.png" alt="" class="landing-bg-img">
+    <div class="landing-overlay"></div>
+  </div>
+
+  <div class="landing-content">
+    <!-- Left Column: Branding -->
+    <div class="landing-left">
+      <div class="landing-brand">
+        <img class="landing-logo" src="./assets/salesbirdie-logo.png" alt="salesbirdie." />
+      </div>
+
+      <h1 class="landing-headline">field sales simplified</h1>
+
+      <div class="landing-points">
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Keep your team focused on the important stuff.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Track activity, pipeline, and revenue in one place.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Real-time rankings, chat, and manager dashboards.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>Real-time insights and coaching to sharpen your edge.</span>
+        </div>
+      </div>
+
+      <p class="landing-footer-attr">
+        <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+      </p>
+    </div>
+
+    <!-- Right Column: Auth -->
+    <div class="landing-right">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="signin">Sign In</button>
+          <button class="auth-tab" data-auth-tab="signup">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signinForm" class="auth-form" autocomplete="off">
+          <div class="auth-field">
+            <label for="signinEmail">Email</label>
+            <input type="email" id="signinEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label for="signinPassword">Password</label>
+            <input type="password" id="signinPassword" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+          <div class="auth-remember">
+            <label class="auth-checkbox-label">
+              <input type="checkbox" id="signinRemember">
+              <span>Remember me</span>
+            </label>
+          </div>
+          <div id="signinError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-submit">Sign In</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" class="auth-form" style="display:none" autocomplete="off">
+          <div class="auth-field">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" placeholder="e.g. Alex Schumacher" required autocomplete="name">
+          </div>
+          <div class="auth-field">
+            <label for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" placeholder="Create a password" required minlength="4" autocomplete="new-password">
+          </div>
+          <div class="auth-field">
+            <label for="signupTitle">Title</label>
+            <input type="text" id="signupTitle" placeholder="e.g. Sales Rep" required autocomplete="organization-title">
+          </div>
+          <div class="auth-manager-toggle">
+            <label class="auth-checkbox-label">
+              <input type="checkbox" id="signupIsManager">
+              <span>I am a manager</span>
+            </label>
+          </div>
+          <div id="signupError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="showcaseLightbox" class="lightbox" aria-hidden="true">
+    <button class="lightbox-close" aria-label="Close">&times;</button>
+    <img class="lightbox-img" alt="">
+  </div>
+
+  <!-- ======= FEATURE SHOWCASE ======= -->
+  <div class="showcase">
+    <div class="showcase-inner">
+      <h2 class="showcase-heading">See how it works</h2>
+      <p class="showcase-sub">Everything your team needs to stay on pace, in one place.</p>
+
+      <div class="showcase-grid">
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-home.png" role="button" tabindex="0" aria-label="Enlarge Daily Insights screenshot">
+            <img src="./assets/screenshot-home.png" alt="Home view with daily insights, streaks, and coaching" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Daily Insights</h3>
+          <p class="showcase-desc">Streaks, conversion rates, and personalized coaching — every morning when you open the app.</p>
+        </div>
+
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-dashboard.png" role="button" tabindex="0" aria-label="Enlarge Pipeline Dashboard screenshot">
+            <img src="./assets/screenshot-dashboard.png" alt="Dashboard with KPI cards, budget charts, and activity targets" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Pipeline Dashboard</h3>
+          <p class="showcase-desc">Revenue targets, budget tracking, and trend charts that update as you log activity.</p>
+        </div>
+
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-team.png" role="button" tabindex="0" aria-label="Enlarge Manager Coaching screenshot">
+            <img src="./assets/screenshot-team.png" alt="Team coaching insights and performance summary" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Manager Coaching</h3>
+          <p class="showcase-desc">Team performance at a glance with actionable coaching insights for every rep.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======= APP SHELL (shown when logged in) ======= -->
+<div id="appShell" style="display:none">
+
+<!-- Header -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-left">
+      <img class="logo-img" src="./assets/salesbirdie-logo.png" alt="salesbirdie." />
+    </div>
+    <div class="header-right">
+
+
+      <button class="btn-icon" id="resetBtn" aria-label="Reset all data" title="Reset all data">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+      <button class="btn-icon" data-theme-toggle aria-label="Switch to dark mode" title="Toggle theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="btn-icon btn-logout" id="logoutBtn" aria-label="Sign out" title="Sign out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Navigation -->
+<nav class="app-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <button class="nav-tab active" data-page="home" aria-current="page">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-tab" data-page="dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-tab" data-page="rankings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="nav-label">Rankings</span>
+    </button>
+    <button class="nav-tab" data-page="calendar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="nav-label">Calendar</span>
+    </button>
+    <button class="nav-tab" data-page="chat">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-label">Chat</span>
+    </button>
+    <button class="nav-tab" data-page="team" id="teamNavTab" style="display:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-label">Team</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main id="main-content" class="app-main">
+  <div class="app-container">
+
+    <!-- ======= HOME VIEW ======= -->
+    <div data-view="home">
+
+      <!-- Hero -->
+      <section class="welcome-hero">
+        <h2 class="welcome-heading" id="welcomeHeading">Happy hunting.</h2>
+        <p class="welcome-date" id="welcomeDate">Friday, March 6, 2026</p>
+      </section>
+
+      <!-- Quarter Revenue Summary -->
+      <p class="welcome-summary-line" id="welQuarterSummary">Quarter revenue: $0 of $0 budget</p>
+
+      <!-- Today's Call Target -->
+      <p class="welcome-call-target" id="welCallTarget">Today's call target: 0 cold calls</p>
+
+
+
+      <!-- Daily Playcard -->
+      <section class="section welcome-playcard-section" aria-labelledby="playcard-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="playcard-heading">Today's Top 3</h2>
+        </div>
+        <div id="playcardList" class="playcard-list">
+          <!-- JS fills -->
+        </div>
+      </section>
+
+      <!-- Focus Card -->
+      <section class="section welcome-focus-section" aria-labelledby="focus-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="focus-heading">Insight</h2>
+        </div>
+        <div id="focusCard" class="focus-card">
+          <p class="focus-insight">Log more activity data to see your focus insight.</p>
+        </div>
+      </section>
+
+      <!-- Today's Reminders -->
+      <section class="section welcome-reminders-section" aria-labelledby="wel-reminders-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="wel-reminders-heading">Today's Reminders</h2>
+          <div class="week-selector">
+            <button class="btn-sm" id="welClearAllTodayBtn" title="Clear all today's reminders" style="width:auto;padding:0 var(--space-3);font-size:var(--text-xs);color:rgba(255,255,255,0.45);">
+              Clear All
+            </button>
+          </div>
+        </div>
+        <div id="welcomeRemindersList" class="reminders-list">
+          <div class="cal-empty">No reminders for today</div>
+        </div>
+      </section>
+
+    </div><!-- end home view -->
+
+    <!-- ======= DASHBOARD VIEW ======= -->
+    <div data-view="dashboard" style="display:none">
+
+      <!-- Section 1: Revenue Targets -->
+      <section class="section" aria-labelledby="budget-heading">
+        <div class="section-header" style="position:relative;">
+          <h2 class="section-title" id="budget-heading">Revenue Targets</h2>
+          <button class="btn-export" id="exportBtn" aria-label="Export" title="Export" style="position:absolute;top:0;right:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+
+        <div class="budget-inputs">
+          <div class="input-group">
+            <label for="quarterlyBudget">Quarterly Revenue Budget</label>
+            <div class="input-wrapper">
+              <span class="input-prefix">$</span>
+              <input type="text" id="quarterlyBudget" inputmode="numeric" placeholder="500,000" autocomplete="off">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="avgSaleSize">Average Sale Size</label>
+            <div class="input-wrapper">
+              <span class="input-prefix">$</span>
+              <input type="text" id="avgSaleSize" inputmode="numeric" placeholder="25,000" autocomplete="off">
+            </div>
+          </div>
+          <div class="input-group" id="repIdentityGroup">
+            <div class="rep-identity" id="repIdentity">
+              <span class="rep-identity-name" id="repName"></span>
+              <span class="rep-identity-title" id="repTitle"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="kpi-card">
+            <div class="kpi-label">Monthly Budget</div>
+            <div class="kpi-value" id="kpiMonthlyBudget">$0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Weekly Budget</div>
+            <div class="kpi-value" id="kpiWeeklyBudget">$0</div>
+          </div>
+          <div class="kpi-card kpi-growth">
+            <div class="kpi-label">Growth (20%)</div>
+            <div class="kpi-value" id="kpiGrowthBudget">$0</div>
+          </div>
+          <div class="kpi-card kpi-maint">
+            <div class="kpi-label">Maint (80%)</div>
+            <div class="kpi-value" id="kpiMaintBudget">$0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Deals / Week</div>
+            <div class="kpi-value" id="kpiDealsWeek">0</div>
+          </div>
+          <div class="kpi-card kpi-actual">
+            <div class="kpi-label">Actual Avg Sale</div>
+            <div class="kpi-value" id="kpiActualAvgSale">&mdash;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Budget vs Revenue Trend Chart -->
+      <section class="section" aria-labelledby="trend-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="trend-heading">Budget vs Revenue</h2>
+          <div class="chart-toggle">
+            <button class="chart-toggle-btn active" data-chart-mode="month">Month</button>
+            <button class="chart-toggle-btn" data-chart-mode="quarter">Quarter</button>
+          </div>
+        </div>
+        <div class="table-wrapper trend-chart-wrap">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Section 2: Pipeline Activity Targets -->
+      <section class="section" aria-labelledby="pipeline-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="pipeline-heading">Weekly Activity Targets</h2>
+          <p class="section-note">Targets auto-adjust from budget. Edit conversion rates to match your actuals.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="pipelineTable">
+            <thead>
+              <tr>
+                <th>Activity</th>
+                <th class="num-col">Weekly Target</th>
+                <th class="num-col">Daily Target</th>
+                <th class="num-col">Conversion</th>
+              </tr>
+            </thead>
+            <tbody id="pipelineBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 3: Daily Activity Log -->
+      <section class="section" aria-labelledby="daily-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="daily-heading">This Week's Activity</h2>
+          <div class="week-selector">
+            <button class="btn-sm" id="prevWeekBtn" aria-label="Previous week">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="week-label" id="weekLabel">Week 1</span>
+            <button class="btn-sm" id="nextWeekBtn" aria-label="Next week">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table activity-table" id="activityTable">
+            <thead>
+              <tr>
+                <th class="day-col">Day</th>
+                <th class="date-col">Date</th>
+                <th class="num-col act-col">Cold Call</th>
+                <th class="num-col act-col">Meeting</th>
+                <th class="num-col act-col">Proposal</th>
+                <th class="num-col act-col">Close</th>
+                <th class="num-col act-col">Grw PO</th>
+                <th class="num-col act-col">Exist Call</th>
+                <th class="num-col act-col">Mnt PO</th>
+                <th class="num-col rev-col">Grw Rev</th>
+                <th class="num-col rev-col">Mnt Rev</th>
+              </tr>
+            </thead>
+            <tbody id="activityBody">
+            </tbody>
+            <tfoot id="activityFoot">
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 4: Monthly Summary -->
+      <section class="section" aria-labelledby="monthly-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="monthly-heading">Monthly Summary</h2>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="monthlyTable">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="num-col">Week 1</th>
+                <th class="num-col">Week 2</th>
+                <th class="num-col">Week 3</th>
+                <th class="num-col">Week 4</th>
+                <th class="num-col total-col">Monthly Total</th>
+                <th class="num-col target-col">Monthly Target</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- end dashboard view -->
+
+    <!-- ======= CALENDAR VIEW ======= -->
+    <div data-view="calendar" style="display:none">
+
+      <!-- Calendar Header -->
+      <section class="section" aria-labelledby="cal-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="cal-heading">Calendar</h2>
+          <div class="week-selector">
+            <button class="btn-sm" id="prevMonthBtn" aria-label="Previous month">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="week-label" id="calMonthLabel" style="min-width:120px;">March 2026</span>
+            <button class="btn-sm" id="nextMonthBtn" aria-label="Next month">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid-wrap">
+          <div class="calendar-header-row">
+            <div class="calendar-day-name">Sun</div>
+            <div class="calendar-day-name">Mon</div>
+            <div class="calendar-day-name">Tue</div>
+            <div class="calendar-day-name">Wed</div>
+            <div class="calendar-day-name">Thu</div>
+            <div class="calendar-day-name">Fri</div>
+            <div class="calendar-day-name">Sat</div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <!-- JS fills cells -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Selected Day Detail -->
+      <section class="section" id="calDayDetail" style="display:none">
+        <div class="section-header">
+          <span class="section-label">Daily Detail</span>
+          <h2 class="section-title" id="calDayTitle">March 6, 2026</h2>
+        </div>
+        <div class="cal-detail-card" id="calDayContent">
+          <p class="cal-empty">No activities logged</p>
+        </div>
+      </section>
+
+      <!-- Reminder Form -->
+      <section class="section" aria-labelledby="reminder-form-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="reminder-form-heading">Add Reminder</h2>
+        </div>
+        <div class="reminder-form" id="reminderForm">
+          <div class="reminder-form-row">
+            <div class="input-group">
+              <label for="reminderDate">Date</label>
+              <div class="input-wrapper">
+                <input type="date" id="reminderDate">
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reminderTime">Time (optional)</label>
+              <div class="input-wrapper">
+                <input type="time" id="reminderTime">
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reminderType">Type</label>
+              <div class="input-wrapper">
+                <select id="reminderType">
+                  <option value="Meeting">Meeting</option>
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Task">Task</option>
+                  <option value="Call">Call</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="input-group" style="margin-top:var(--space-3)">
+            <label for="reminderTitle">Title</label>
+            <div class="input-wrapper">
+              <input type="text" id="reminderTitle" placeholder="e.g. Follow up with Acme Corp">
+            </div>
+          </div>
+          <div class="input-group" style="margin-top:var(--space-3)">
+            <label for="reminderNotes">Notes (optional)</label>
+            <div class="input-wrapper" style="border-bottom:none;">
+              <textarea id="reminderNotes" rows="2" placeholder="Additional details..." style="width:100%;background:transparent;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--space-2);resize:vertical;font:inherit;color:inherit;"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-4)">
+            <button class="btn-export" id="addReminderBtn" type="button">Add Reminder</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reminders List -->
+      <section class="section" aria-labelledby="reminders-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="reminders-heading">Upcoming Reminders</h2>
+          <div class="week-selector">
+            <button class="btn-sm" id="clearAllRemindersBtn" title="Clear all reminders" style="width:auto;padding:0 var(--space-3);font-size:var(--text-xs);color:rgba(255,255,255,0.45);">
+              Clear All
+            </button>
+          </div>
+        </div>
+        <div id="remindersList" class="reminders-list">
+          <div class="cal-empty">No upcoming reminders</div>
+        </div>
+      </section>
+
+    </div><!-- end calendar view -->
+
+    <!-- ======= RANKINGS VIEW ======= -->
+    <div data-view="rankings" style="display:none">
+
+      <section class="section" aria-labelledby="rankings-chart-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="rankings-chart-heading">Revenue Comparison</h2>
+        </div>
+        <div class="table-wrapper trend-chart-wrap rankings-chart-wrap">
+          <canvas id="rankingsChart"></canvas>
+        </div>
+        <div class="rankings-legend" id="rankingsLegend"></div>
+      </section>
+
+      <section class="section" aria-labelledby="rankings-table-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="rankings-table-heading">Leaderboard</h2>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" id="rankingsTable">
+            <thead>
+              <tr>
+                <th>Rep Name</th>
+                <th class="num-col">Total Calls</th>
+                <th class="num-col">Total Meetings</th>
+                <th class="num-col">Total POs</th>
+                <th class="num-col">Total Revenue</th>
+                <th class="num-col">% of Budget</th>
+              </tr>
+            </thead>
+            <tbody id="rankingsBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- end rankings view -->
+
+    <!-- ======= CHAT VIEW ======= -->
+    <div data-view="chat" style="display:none">
+
+      <section class="section chat-section">
+        <div class="section-header">
+          <h2 class="section-title">Chat</h2>
+        </div>
+
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <!-- JS fills -->
+          </div>
+
+          <div class="chat-composer">
+            <div class="chat-input-row">
+              <label class="chat-attach-btn" title="Attach image">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <input type="file" accept="image/*,image/gif" id="chatImageInput" style="display:none">
+              </label>
+              <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+              <button class="chat-send-btn" id="chatSendBtn" title="Send message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div><!-- end chat view -->
+
+    <!-- ======= TEAM VIEW (manager only) ======= -->
+    <div data-view="team" style="display:none">
+
+      <!-- Invite Rep -->
+      <section class="section" aria-labelledby="team-invite-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="team-invite-heading">Invite Team Member</h2>
+        </div>
+        <div class="team-invite-form">
+          <div class="team-invite-row">
+            <div class="input-group">
+              <label for="inviteRepName">Name</label>
+              <div class="input-wrapper">
+                <input type="text" id="inviteRepName" placeholder="e.g. Jordan Rivera" autocomplete="off">
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="inviteRepTitle">Title</label>
+              <div class="input-wrapper">
+                <input type="text" id="inviteRepTitle" placeholder="e.g. Sales Rep" autocomplete="off">
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="inviteRepEmail">Email</label>
+              <div class="input-wrapper">
+                <input type="email" id="inviteRepEmail" placeholder="rep@company.com" autocomplete="off">
+              </div>
+            </div>
+          </div>
+          <div class="team-invite-options">
+            <label class="team-checkbox-label">
+              <input type="checkbox" id="inviteIsManager">
+              <span>Grant manager access</span>
+            </label>
+            <button class="btn-export" id="inviteRepBtn" type="button">Invite</button>
+          </div>
+          <div id="inviteMsg" class="auth-error" style="display:none"></div>
+        </div>
+      </section>
+
+      <!-- Team Roster -->
+      <section class="section" aria-labelledby="team-roster-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="team-roster-heading">Team Roster</h2>
+        </div>
+        <div id="teamRoster" class="team-roster">
+          <div class="cal-empty">No team members yet.</div>
+        </div>
+      </section>
+
+      <!-- Team Activity Summary -->
+      <section class="section" aria-labelledby="team-summary-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="team-summary-heading">Team Summary</h2>
+          <div class="chart-toggle">
+            <button class="chart-toggle-btn team-period-btn active" data-team-period="week">Week</button>
+            <button class="chart-toggle-btn team-period-btn" data-team-period="month">Month</button>
+            <button class="chart-toggle-btn team-period-btn" data-team-period="quarter">Quarter</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" id="teamSummaryTable">
+            <thead>
+              <tr>
+                <th>Rep Name</th>
+                <th class="num-col">Total Calls</th>
+                <th class="num-col">Total Meetings</th>
+                <th class="num-col">Total Proposals</th>
+                <th class="num-col">Total POs</th>
+                <th class="num-col">Total Revenue</th>
+                <th class="num-col">% of Quarterly Budget</th>
+              </tr>
+            </thead>
+            <tbody id="teamSummaryBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Coaching Insights -->
+      <section class="section" aria-labelledby="coaching-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="coaching-heading">Coaching Insights</h2>
+        </div>
+        <div id="coachingInsights" class="coaching-list">
+          <div class="cal-empty">Add team members to see coaching insights.</div>
+        </div>
+      </section>
+
+    </div><!-- end team view -->
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
+    Created with Perplexity Computer
+  </a>
+</footer>
+
+</div><!-- end appShell -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="./app.js"></script>
+<script>
+(function () {
+  var lb = document.getElementById("showcaseLightbox");
+  if (!lb) return;
+  var lbImg = lb.querySelector(".lightbox-img");
+  var closeBtn = lb.querySelector(".lightbox-close");
+
+  function openLightbox(src) {
+    lbImg.src = src;
+    lb.classList.add("is-open");
+    lb.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLightbox() {
+    lb.classList.remove("is-open");
+    lb.setAttribute("aria-hidden", "true");
+    setTimeout(function () { lbImg.src = ""; }, 300);
+  }
+
+  document.querySelectorAll("[data-lightbox]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      openLightbox(el.getAttribute("data-lightbox"));
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(el.getAttribute("data-lightbox")); }
+    });
+  });
+
+  closeBtn.addEventListener("click", closeLightbox);
+  lb.addEventListener("click", function (e) { if (e.target === lb) closeLightbox(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
+})();
+</script>
+</body>
+</html>
