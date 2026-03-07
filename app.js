@@ -400,6 +400,7 @@
     renderPipeline();
     renderActivityFooter();
     renderMonthlySummary();
+    markUnsaved();
     var newInp = document.querySelector(".conv-input[data-conv=\"" + idx + "\"]");
     if (newInp) {
       newInp.focus();
@@ -619,7 +620,6 @@
     var textFaint = getCSSVar("--color-text-faint") || "#bab9b4";
     var textMuted = getCSSVar("--color-text-muted") || "#7a7974";
     var divider = getCSSVar("--color-divider") || "#dcd9d5";
-    var revenueRed = "#d32f2f"; // clear red for actual revenue line
 
     var labels, budgetData, revenueData;
 
@@ -633,6 +633,16 @@
       labels = ["Week 1", "Week 2", "Week 3", "Week 4"];
       budgetData = [weeklyBudget, weeklyBudget * 2, weeklyBudget * 3, weeklyBudget * 4];
       revenueData = getCumulativeValues(getMonthlyRevenueTotals(state.currentWeek));
+    }
+
+    // Determine revenue line color: green if at or above budget pace, red if behind
+    var lastRevIdx = -1;
+    for (var ri = revenueData.length - 1; ri >= 0; ri--) {
+      if (revenueData[ri] != null && revenueData[ri] > 0) { lastRevIdx = ri; break; }
+    }
+    var revenueColor = "#d32f2f"; // default red
+    if (lastRevIdx >= 0 && budgetData[lastRevIdx] != null) {
+      revenueColor = revenueData[lastRevIdx] >= budgetData[lastRevIdx] ? "#2e7d32" : "#d32f2f";
     }
 
     var chartData = {
@@ -652,10 +662,10 @@
         {
           label: "Actual Revenue",
           data: revenueData,
-          borderColor: revenueRed,
+          borderColor: revenueColor,
           borderWidth: 2.5,
           pointRadius: state.chartMode === "quarter" ? 3 : 4,
-          pointBackgroundColor: revenueRed,
+          pointBackgroundColor: revenueColor,
           fill: false,
           tension: 0.2,
           spanGaps: false
@@ -1026,39 +1036,160 @@
       });
   }
 
-  /* ========== PER-USER STATE STORAGE ========== */
-  var userStateStore = {}; // keyed by email
+  /* ========== PER-USER STATE STORAGE (Supabase-backed) ========== */
 
-  function saveCurrentUserState() {
-    if (!authState.currentUser) return;
-    userStateStore[authState.currentUser.email] = {
+  /** Get quarter key like "2026-Q1" for the current date */
+  function getQuarterKey() {
+    var now = new Date();
+    var q = Math.floor(now.getMonth() / 3) + 1;
+    return now.getFullYear() + "-Q" + q;
+  }
+
+  // Local cache for team members' state (populated when Team/Rankings views load)
+  var teamStateCache = {}; // keyed by email
+
+  // Cached access token for synchronous use (e.g. beforeunload)
+  var _cachedAccessToken = null;
+
+  /** Build the state blob to persist */
+  function buildStateBlob() {
+    return {
       quarterlyBudget: state.quarterlyBudget,
       avgSaleSize: state.avgSaleSize,
       currentWeek: state.currentWeek,
-      dailyData: JSON.parse(JSON.stringify(state.dailyData)),
-      growthRevData: JSON.parse(JSON.stringify(state.growthRevData)),
-      maintRevData: JSON.parse(JSON.stringify(state.maintRevData)),
-      convRates: state.convRates.slice(),
-      reminders: JSON.parse(JSON.stringify(state.reminders)),
+      dailyData: state.dailyData,
+      growthRevData: state.growthRevData,
+      maintRevData: state.maintRevData,
+      convRates: state.convRates,
+      reminders: state.reminders,
       chartMode: state.chartMode
     };
   }
 
-  function loadUserState(email) {
-    if (userStateStore[email]) {
-      var saved = userStateStore[email];
-      state.quarterlyBudget = saved.quarterlyBudget;
-      state.avgSaleSize = saved.avgSaleSize;
-      state.currentWeek = saved.currentWeek;
-      state.dailyData = JSON.parse(JSON.stringify(saved.dailyData));
-      state.growthRevData = JSON.parse(JSON.stringify(saved.growthRevData));
-      state.maintRevData = JSON.parse(JSON.stringify(saved.maintRevData));
-      state.convRates = saved.convRates.slice();
-      state.reminders = JSON.parse(JSON.stringify(saved.reminders));
-      state.chartMode = saved.chartMode;
-      return true;
+  /** Refresh the cached access token for synchronous use */
+  function refreshCachedToken() {
+    supabase.auth.getSession().then(function (res) {
+      if (res.data && res.data.session) {
+        _cachedAccessToken = res.data.session.access_token;
+      }
+    });
+  }
+
+  /** Update local team cache (no Supabase write — that happens via Save button or flushSave) */
+  function syncLocalCache() {
+    if (!authState.currentUser) return;
+    teamStateCache[authState.currentUser.email] = JSON.parse(JSON.stringify(buildStateBlob()));
+  }
+
+  /** Safety-net save on page unload (only fires if user has unsaved changes) */
+  function flushSave() {
+    if (!authState.currentUser) return;
+    // _hasUnsavedChanges is set by markUnsaved(), defined later
+    if (typeof _hasUnsavedChanges !== "undefined" && !_hasUnsavedChanges) return;
+    var blob = buildStateBlob();
+    var body = JSON.stringify({
+      user_email: authState.currentUser.email,
+      quarter_key: getQuarterKey(),
+      state_data: blob,
+      updated_at: new Date().toISOString()
+    });
+    // Use fetch with keepalive for reliable page-unload saves
+    try {
+      fetch(SUPABASE_URL + "/rest/v1/user_state", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + (_cachedAccessToken || SUPABASE_ANON_KEY),
+          "Prefer": "resolution=merge-duplicates"
+        },
+        body: body,
+        keepalive: true
+      });
+    } catch (e) {
+      // Fallback
+      supabase
+        .from("user_state")
+        .upsert({
+          user_email: authState.currentUser.email,
+          quarter_key: getQuarterKey(),
+          state_data: blob,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_email,quarter_key" });
     }
-    return false;
+  }
+
+  // Safety-net: save unsaved changes on page close
+  window.addEventListener("beforeunload", function (e) {
+    flushSave();
+    if (typeof _hasUnsavedChanges !== "undefined" && _hasUnsavedChanges) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
+  /** Load current user's state from Supabase. Returns a Promise<boolean>. */
+  function loadUserState(email) {
+    return supabase
+      .from("user_state")
+      .select("state_data")
+      .eq("user_email", email)
+      .eq("quarter_key", getQuarterKey())
+      .single()
+      .then(function (res) {
+        if (res.data && res.data.state_data) {
+          var saved = res.data.state_data;
+          state.quarterlyBudget = saved.quarterlyBudget || 0;
+          state.avgSaleSize = saved.avgSaleSize || 0;
+          state.currentWeek = saved.currentWeek || 0;
+          state.dailyData = saved.dailyData || createEmptyQuarterWeeks();
+          state.growthRevData = saved.growthRevData || createEmptyQuarterRevs();
+          state.maintRevData = saved.maintRevData || createEmptyQuarterRevs();
+          state.convRates = saved.convRates || [0.50, 0.50, 0.50, 0.50, 0.50];
+          state.reminders = saved.reminders || [];
+          state.chartMode = saved.chartMode || "month";
+          // Cache locally too
+          teamStateCache[email] = JSON.parse(JSON.stringify(saved));
+          return true;
+        }
+        return false;
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  /** Fetch all team members' state data from Supabase for team/rankings views */
+  function loadTeamStateData() {
+    if (!authState.currentUser || !authState.currentUser.teamId) {
+      return Promise.resolve();
+    }
+
+    // Get all emails in this team
+    var teamEmails = [];
+    var members = getTeamMembers();
+    for (var i = 0; i < members.length; i++) {
+      teamEmails.push(members[i].email);
+    }
+
+    if (teamEmails.length === 0) return Promise.resolve();
+
+    return supabase
+      .from("user_state")
+      .select("user_email, state_data")
+      .eq("quarter_key", getQuarterKey())
+      .in("user_email", teamEmails)
+      .then(function (res) {
+        if (res.data) {
+          for (var j = 0; j < res.data.length; j++) {
+            var row = res.data[j];
+            teamStateCache[row.user_email] = row.state_data;
+          }
+        }
+      })
+      .catch(function (err) {
+        console.error("Error loading team state:", err);
+      });
   }
 
   function resetStateToDefaults() {
@@ -1075,10 +1206,11 @@
   }
 
   function handleLogout() {
-    saveCurrentUserState();
+    flushSave();
     authState.currentUser = null;
     authState.users = [];
     authState.teams = {};
+    teamStateCache = {};
     supabase.auth.signOut().then(function () {
       showLanding();
     }).catch(function () {
@@ -1105,31 +1237,35 @@
     document.getElementById("landingPage").style.display = "none";
     document.getElementById("appShell").style.display = "";
 
-    // Load per-user state or init fresh defaults for new users
-    var hasState = loadUserState(authState.currentUser.email);
-    if (!hasState) {
-      resetStateToDefaults();
-      state.currentWeek = getCurrentQuarterWeekIndex();
-    }
+    // Cache the access token for synchronous use in flushSave
+    refreshCachedToken();
 
-    // Populate rep identity display from auth
-    var repNameEl = document.getElementById("repName");
-    var repTitleEl = document.getElementById("repTitle");
-    if (repNameEl && authState.currentUser) {
-      repNameEl.textContent = authState.currentUser.name;
-    }
-    if (repTitleEl && authState.currentUser) {
-      repTitleEl.textContent = authState.currentUser.title || "";
-    }
+    // Load per-user state from Supabase (async)
+    loadUserState(authState.currentUser.email).then(function (hasState) {
+      if (!hasState) {
+        resetStateToDefaults();
+        state.currentWeek = getCurrentQuarterWeekIndex();
+      }
 
-    // Show/hide Team tab based on manager status
-    var teamTab = document.getElementById("teamNavTab");
-    if (teamTab) {
-      teamTab.style.display = authState.currentUser && authState.currentUser.isManager ? "" : "none";
-    }
+      // Populate rep identity display from auth
+      var repNameEl = document.getElementById("repName");
+      var repTitleEl = document.getElementById("repTitle");
+      if (repNameEl && authState.currentUser) {
+        repNameEl.textContent = authState.currentUser.name;
+      }
+      if (repTitleEl && authState.currentUser) {
+        repTitleEl.textContent = authState.currentUser.title || "";
+      }
 
-    // Init app if not yet done
-    initApp();
+      // Show/hide Team tab based on manager status
+      var teamTab = document.getElementById("teamNavTab");
+      if (teamTab) {
+        teamTab.style.display = authState.currentUser && authState.currentUser.isManager ? "" : "none";
+      }
+
+      // Init app
+      initApp();
+    });
   }
 
   function initAuthForms() {
@@ -1198,13 +1334,19 @@
       renderCalendar();
       renderReminders();
     } else if (name === "rankings") {
-      renderRankings();
+      // Load team data from Supabase before rendering rankings
+      loadTeamStateData().then(function () {
+        renderRankings();
+      });
     } else if (name === "chat") {
       renderChat();
     } else if (name === "team") {
-      renderTeamSummary();
-      renderCoachingInsights();
-      renderTeamRoster();
+      // Load team data from Supabase before rendering team views
+      loadTeamStateData().then(function () {
+        renderTeamSummary();
+        renderCoachingInsights();
+        renderTeamRoster();
+      });
     }
   }
 
@@ -1776,16 +1918,19 @@
     document.getElementById("reminderNotes").value = "";
 
     renderReminders();
+    markUnsaved();
   }
 
   function clearReminder(id) {
     state.reminders = state.reminders.filter(function (r) { return r.id !== id; });
     renderReminders();
+    markUnsaved();
   }
 
   function clearAllReminders() {
     state.reminders = [];
     renderReminders();
+    markUnsaved();
   }
 
   function renderReminders() {
@@ -1844,20 +1989,48 @@
 
   /* ========== RANKINGS ========== */
   function getUserLiveData(userEmail) {
-    // For now, only the current user has actual data. Others show zeros.
+    // Determine which data source to use:
+    // - Current user: use live state object
+    // - Team members: use teamStateCache (loaded from Supabase)
+    var src = null;
+
     if (authState.currentUser && userEmail === authState.currentUser.email) {
+      // Current user: read directly from live state
+      src = {
+        dailyData: state.dailyData,
+        growthRevData: state.growthRevData,
+        maintRevData: state.maintRevData,
+        quarterlyBudget: state.quarterlyBudget
+      };
+    } else if (teamStateCache[userEmail]) {
+      // Team member: read from cache (fetched from Supabase)
+      var cached = teamStateCache[userEmail];
+      src = {
+        dailyData: cached.dailyData || createEmptyQuarterWeeks(),
+        growthRevData: cached.growthRevData || createEmptyQuarterRevs(),
+        maintRevData: cached.maintRevData || createEmptyQuarterRevs(),
+        quarterlyBudget: cached.quarterlyBudget || 0
+      };
+    }
+
+    if (src) {
       var weeklyRev = [];
       var totalCalls = 0;
       var totalMeetings = 0;
+      var totalProposals = 0;
       var totalPOs = 0;
 
       for (var w = 0; w < WEEKS_PER_QUARTER; w++) {
         var weekRev = 0;
         for (var d = 0; d < 5; d++) {
-          weekRev += state.growthRevData[w][d] + state.maintRevData[w][d];
-          totalCalls += state.dailyData[w][d][0]; // Cold calls
-          totalMeetings += state.dailyData[w][d][1]; // Meetings
-          totalPOs += state.dailyData[w][d][4] + state.dailyData[w][d][6]; // Growth POs + Maint POs
+          if (src.growthRevData[w]) weekRev += (src.growthRevData[w][d] || 0);
+          if (src.maintRevData[w]) weekRev += (src.maintRevData[w][d] || 0);
+          if (src.dailyData[w] && src.dailyData[w][d]) {
+            totalCalls += src.dailyData[w][d][0] || 0;
+            totalMeetings += src.dailyData[w][d][1] || 0;
+            totalProposals += src.dailyData[w][d][2] || 0;
+            totalPOs += (src.dailyData[w][d][4] || 0) + (src.dailyData[w][d][6] || 0);
+          }
         }
         weeklyRev.push(weekRev);
       }
@@ -1866,20 +2039,22 @@
         weeklyRev: weeklyRev,
         calls: totalCalls,
         meetings: totalMeetings,
+        proposals: totalProposals,
         pos: totalPOs,
-        budget: state.quarterlyBudget || 500000
+        budget: src.quarterlyBudget || 0
       };
     }
 
-    // Other users: zeros
+    // No data available for this user
     var emptyRev = [];
     for (var ew = 0; ew < WEEKS_PER_QUARTER; ew++) emptyRev.push(0);
     return {
       weeklyRev: emptyRev,
       calls: 0,
       meetings: 0,
+      proposals: 0,
       pos: 0,
-      budget: 500000
+      budget: 0
     };
   }
 
@@ -1901,6 +2076,7 @@
         weeklyRev: live.weeklyRev,
         calls: live.calls,
         meetings: live.meetings,
+        proposals: live.proposals,
         pos: live.pos,
         color: CHART_COLORS[i % CHART_COLORS.length]
       });
@@ -2082,21 +2258,24 @@
       for (var w = 0; w < rep.weeklyRev.length; w++) { totalRev += rep.weeklyRev[w]; }
 
       // Period scaling: data covers full quarter (12 weeks)
-      var periodCalls, periodMeetings, periodPOs, periodRev;
+      var periodCalls, periodMeetings, periodProposals, periodPOs, periodRev;
       if (period === "week") {
         periodCalls = Math.round(rep.calls / WEEKS_PER_QUARTER);
         periodMeetings = Math.round(rep.meetings / WEEKS_PER_QUARTER);
+        periodProposals = Math.round(rep.proposals / WEEKS_PER_QUARTER);
         periodPOs = Math.round(rep.pos / WEEKS_PER_QUARTER);
         periodRev = totalRev / WEEKS_PER_QUARTER;
       } else if (period === "month") {
         periodCalls = Math.round(rep.calls / 3);
         periodMeetings = Math.round(rep.meetings / 3);
+        periodProposals = Math.round(rep.proposals / 3);
         periodPOs = Math.round(rep.pos / 3);
         periodRev = totalRev / 3;
       } else {
         // quarter — raw totals
         periodCalls = rep.calls;
         periodMeetings = rep.meetings;
+        periodProposals = rep.proposals;
         periodPOs = rep.pos;
         periodRev = totalRev;
       }
@@ -2109,7 +2288,7 @@
       html += "<td>" + escapeHTML(rep.name) + (isMe ? " <span style=\"font-size:10px;color:var(--color-primary);font-weight:600;\">(You)</span>" : "") + "</td>";
       html += "<td class=\"num-col\">" + periodCalls + "</td>";
       html += "<td class=\"num-col\">" + periodMeetings + "</td>";
-      html += "<td class=\"num-col\">0</td>"; // proposals column placeholder
+      html += "<td class=\"num-col\">" + periodProposals + "</td>";
       html += "<td class=\"num-col\">" + periodPOs + "</td>";
       html += "<td class=\"num-col\">" + formatCurrency(periodRev) + "</td>";
       html += "<td class=\"num-col " + getStatusClass(pctBudget) + " budget-pct\">" + formatPct(pctBudget) + "</td>";
@@ -2325,9 +2504,9 @@
       }
     }
 
-    // Remove per-user state if any
-    if (typeof userStateStore !== "undefined" && userStateStore[email]) {
-      delete userStateStore[email];
+    // Remove from local team state cache
+    if (teamStateCache[email]) {
+      delete teamStateCache[email];
     }
 
     // Remove from Supabase (clear team assignment)
@@ -2715,6 +2894,8 @@
     if (state.activeView === "dashboard") {
       renderTrendChart();
     }
+
+    markUnsaved();
   }
 
   function handleInputFocus(e) { e.target.select(); }
@@ -2741,6 +2922,7 @@
     state.quarterlyBudget = parseNum(document.getElementById("quarterlyBudget").value);
     state.avgSaleSize = parseNum(document.getElementById("avgSaleSize").value);
     renderAll();
+    markUnsaved();
   }
 
   function formatBudgetInput(e) {
@@ -2750,27 +2932,71 @@
 
   function handleWeekNav(dir) {
     var nw = state.currentWeek + dir;
-    if (nw >= 0 && nw < WEEKS_PER_QUARTER) { state.currentWeek = nw; renderActivityLog(); }
+    if (nw >= 0 && nw < WEEKS_PER_QUARTER) {
+      state.currentWeek = nw;
+      renderActivityLog();
+    }
   }
 
-  function resetAll() {
-    state.quarterlyBudget = 0;
-    state.avgSaleSize = 0;
-    state.currentWeek = 0;
-    state.dailyData = createEmptyQuarterWeeks();
-    state.growthRevData = createEmptyQuarterRevs();
-    state.maintRevData = createEmptyQuarterRevs();
-    state.convRates = [0.50, 0.50, 0.50, 0.50, 0.50];
-    state.reminders = [];
-    state.selectedDate = null;
-    document.getElementById("quarterlyBudget").value = "";
-    document.getElementById("avgSaleSize").value = "";
-    destroyTrendChart();
-    if (rankingsChartInstance) {
-      rankingsChartInstance.destroy();
-      rankingsChartInstance = null;
-    }
-    renderAll();
+  /* ========== MANUAL SAVE ========== */
+  var _hasUnsavedChanges = false;
+
+  function markUnsaved() {
+    _hasUnsavedChanges = true;
+    var btn = document.getElementById("saveBtn");
+    if (btn) btn.classList.remove("saved");
+  }
+
+  function saveAllChanges() {
+    if (!authState.currentUser) return;
+    var btn = document.getElementById("saveBtn");
+    if (btn) btn.classList.add("saving");
+
+    // Update local team cache
+    teamStateCache[authState.currentUser.email] = JSON.parse(JSON.stringify(buildStateBlob()));
+
+    var blob = buildStateBlob();
+    supabase
+      .from("user_state")
+      .upsert({
+        user_email: authState.currentUser.email,
+        quarter_key: getQuarterKey(),
+        state_data: blob,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_email,quarter_key" })
+      .then(function (res) {
+        if (btn) btn.classList.remove("saving");
+        if (res.error) {
+          console.error("Save error:", res.error);
+          showSaveToast("Save failed — try again", true);
+        } else {
+          _hasUnsavedChanges = false;
+          if (btn) btn.classList.add("saved");
+          showSaveToast("All changes saved", false);
+          refreshCachedToken();
+          // Remove saved class after 3s
+          setTimeout(function () {
+            if (btn) btn.classList.remove("saved");
+          }, 3000);
+        }
+      });
+  }
+
+  function showSaveToast(msg, isError) {
+    var existing = document.querySelector(".save-toast");
+    if (existing) existing.remove();
+    var toast = document.createElement("div");
+    toast.className = "save-toast";
+    toast.textContent = msg;
+    if (isError) toast.style.background = "var(--color-error, #d32f2f)";
+    document.body.appendChild(toast);
+    // Trigger reflow then show
+    void toast.offsetWidth;
+    toast.classList.add("show");
+    setTimeout(function () {
+      toast.classList.remove("show");
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 2200);
   }
 
   /* ========== THEME TOGGLE ========== */
@@ -3012,7 +3238,7 @@
 
     document.getElementById("prevWeekBtn").addEventListener("click", function () { handleWeekNav(-1); });
     document.getElementById("nextWeekBtn").addEventListener("click", function () { handleWeekNav(1); });
-    document.getElementById("resetBtn").addEventListener("click", resetAll);
+    document.getElementById("saveBtn").addEventListener("click", saveAllChanges);
     document.getElementById("exportBtn").addEventListener("click", exportCSV);
     document.getElementById("logoutBtn").addEventListener("click", handleLogout);
 

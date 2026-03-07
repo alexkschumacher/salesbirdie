@@ -791,6 +791,38 @@
   background: rgba(255,255,255,0.15);
 }
 
+/* Save All Changes button */
+.save-all-btn {
+  position: relative;
+}
+.save-all-btn.saving {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.save-all-btn.saved {
+  color: var(--color-success, #2e7d32);
+}
+.save-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--color-success, #2e7d32);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 9999;
+}
+.save-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .btn-export {
   display: inline-flex;
   align-items: center;
