@@ -1666,8 +1666,22 @@ table { border-collapse: collapse; width: 100%; }
 /* ===== DASHBOARD BOTTOM GRID ===== */
 .dashboard-bottom-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.6fr;
   gap: var(--space-6, 24px);
+  align-items: start;
+}
+.dashboard-bottom-grid .data-table {
+  font-size: clamp(0.7rem, 0.65rem + 0.25vw, 0.8rem);
+}
+.dashboard-bottom-grid .data-table th,
+.dashboard-bottom-grid .data-table td {
+  padding: var(--space-2) var(--space-2);
+}
+.dashboard-bottom-grid .section-title {
+  font-size: var(--text-sm);
+}
+.dashboard-bottom-grid .section-note {
+  font-size: clamp(0.65rem, 0.6rem + 0.2vw, 0.75rem);
 }
 @media (max-width: 768px) {
   .dashboard-bottom-grid {

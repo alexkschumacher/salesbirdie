@@ -403,7 +403,30 @@
       </section>
 
       <div class="dashboard-bottom-grid">
-      <!-- Section 4: Monthly Summary -->
+      <!-- Weekly Activity Targets (left) -->
+      <section class="section" aria-labelledby="pipeline-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="pipeline-heading">Weekly Activity Targets</h2>
+          <p class="section-note">Targets auto-adjust from budget. Edit conversion rates to match your actuals.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="pipelineTable">
+            <thead>
+              <tr>
+                <th>Activity</th>
+                <th class="num-col">Weekly Target</th>
+                <th class="num-col">Daily Target</th>
+                <th class="num-col">Conversion</th>
+              </tr>
+            </thead>
+            <tbody id="pipelineBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Monthly Summary (right) -->
       <section class="section" aria-labelledby="monthly-heading">
         <div class="section-header">
           <h2 class="section-title" id="monthly-heading">Monthly Summary</h2>
@@ -423,29 +446,6 @@
               </tr>
             </thead>
             <tbody id="monthlyBody">
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Section 2: Pipeline Activity Targets -->
-      <section class="section" aria-labelledby="pipeline-heading">
-        <div class="section-header">
-          <h2 class="section-title" id="pipeline-heading">Weekly Activity Targets</h2>
-          <p class="section-note">Targets auto-adjust from budget. Edit conversion rates to match your actuals.</p>
-        </div>
-
-        <div class="table-wrapper">
-          <table class="data-table" id="pipelineTable">
-            <thead>
-              <tr>
-                <th>Activity</th>
-                <th class="num-col">Weekly Target</th>
-                <th class="num-col">Daily Target</th>
-                <th class="num-col">Conversion</th>
-              </tr>
-            </thead>
-            <tbody id="pipelineBody">
             </tbody>
           </table>
         </div>
@@ -715,7 +715,7 @@
                 <th class="num-col">Total Proposals</th>
                 <th class="num-col">Total POs</th>
                 <th class="num-col">Total Revenue</th>
-                <th class="num-col">% of Quarterly Budget</th>
+                <th class="num-col">% of Budget</th>
               </tr>
             </thead>
             <tbody id="teamSummaryBody">
