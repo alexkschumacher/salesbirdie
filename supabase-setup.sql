@@ -1,23 +1,12 @@
 -- =============================================
--- salesbirdie — Supabase Database Setup
+-- salesbirdie — Add user_state table
 -- Run this in the Supabase SQL Editor
 -- (Dashboard → SQL Editor → New query)
+-- NOTE: profiles table already exists, this
+-- only adds the new user_state table.
 -- =============================================
 
--- 1. Create the profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id              UUID PRIMARY KEY,
-  email           TEXT UNIQUE NOT NULL,
-  full_name       TEXT NOT NULL,
-  title           TEXT DEFAULT '',
-  is_manager      BOOLEAN DEFAULT FALSE,
-  team_id         TEXT,
-  parent_user_id  TEXT,
-  is_pending      BOOLEAN DEFAULT FALSE,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-
--- 2. Create the user_state table (activity data per user per quarter)
+-- 1. Create the user_state table (activity data per user per quarter)
 CREATE TABLE IF NOT EXISTS user_state (
   id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_email  TEXT NOT NULL,
@@ -27,21 +16,10 @@ CREATE TABLE IF NOT EXISTS user_state (
   UNIQUE (user_email, quarter_key)
 );
 
--- 3. Enable Row Level Security
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+-- 2. Enable Row Level Security
 ALTER TABLE user_state ENABLE ROW LEVEL SECURITY;
 
--- 4. RLS Policies for profiles
-CREATE POLICY "Profiles are viewable by everyone"
-  ON profiles FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert profiles"
-  ON profiles FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Users can update profiles"
-  ON profiles FOR UPDATE USING (true);
-
--- 5. RLS Policies for user_state
+-- 3. RLS Policies for user_state
 
 -- Users can read their own data
 CREATE POLICY "Users can read own state"
@@ -70,6 +48,5 @@ CREATE POLICY "Users can update own state"
   ON user_state FOR UPDATE
   USING (user_email = (SELECT email FROM profiles WHERE id = auth.uid()));
 
--- 6. Index for fast team lookups
-CREATE INDEX IF NOT EXISTS idx_profiles_team_id ON profiles (team_id);
+-- 4. Index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_user_state_email_quarter ON user_state (user_email, quarter_key);
