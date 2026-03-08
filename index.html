@@ -1,32 +1,179 @@
-import globals from "globals";
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
-export default [{
-  languageOptions: {
-    ecmaVersion: 2021,
-    sourceType: "script",
-    globals: {
-      ...globals.browser,
-      // CDN libraries referenced in website-building skill files
-      Chart: "readonly", d3: "readonly", gsap: "readonly", ScrollTrigger: "readonly",
-      THREE: "readonly", Motion: "readonly", Lenis: "readonly",
-      React: "readonly", ReactDOM: "readonly", Vue: "readonly",
-      Phaser: "readonly", PIXI: "readonly", p5: "readonly", Kaboom: "readonly",
-      L: "readonly", mapboxgl: "readonly",
-      anime: "readonly", Tone: "readonly", lottie: "readonly",
-      lucide: "readonly", SVG: "readonly", Snap: "readonly",
-      CANNON: "readonly", RAPIER: "readonly",
-      $: "readonly", jQuery: "readonly",
-    }
-  },
-  rules: {
-    "no-undef": "error",
-    "no-dupe-keys": "error",
-    "no-dupe-args": "error",
-    "no-duplicate-case": "error",
-    "no-unreachable": "error",
-    "no-constant-condition": "error",
-    "no-empty": "error",
-    "valid-typeof": "error",
-    "no-redeclare": "error",
-  }
-}];
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>salesbirdie — field sales simplified</title>
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./app.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<a href="#main-content" class="sr-only" style="position:absolute;top:0;left:0;padding:var(--space-2) var(--space-4);background:var(--color-primary);color:var(--color-text-inverse);z-index:1000;font-size:var(--text-sm);">Skip to content</a>
+
+<!-- ======= LANDING PAGE (shown when not logged in) ======= -->
+<div id="landingPage" class="landing-page">
+  <div class="landing-bg">
+    <img src="./assets/golf-bg.png" alt="" class="landing-bg-img">
+    <div class="landing-overlay"></div>
+  </div>
+
+  <div class="landing-content">
+    <!-- Left Column: Branding -->
+    <div class="landing-left">
+      <div class="landing-brand">
+        <img class="landing-logo" src="./assets/salesbirdie-logo.png" alt="salesbirdie." />
+      </div>
+
+      <h1 class="landing-headline">field sales simplified</h1>
+
+      <div class="landing-points">
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Keep your team focused on the important stuff.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Track activity, pipeline, and revenue in one place.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Real-time rankings, chat, and manager dashboards.</span>
+        </div>
+        <div class="landing-point">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>Real-time insights and coaching to sharpen your edge.</span>
+        </div>
+      </div>
+
+      <p class="landing-footer-attr">
+        <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+      </p>
+    </div>
+
+    <!-- Right Column: Auth -->
+    <div class="landing-right">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="signin">Sign In</button>
+          <button class="auth-tab" data-auth-tab="signup">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signinForm" class="auth-form" autocomplete="off">
+          <div class="auth-field">
+            <label for="signinEmail">Email</label>
+            <input type="email" id="signinEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label for="signinPassword">Password</label>
+            <input type="password" id="signinPassword" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+          <div class="auth-remember">
+            <label class="auth-checkbox-label">
+              <input type="checkbox" id="signinRemember">
+              <span>Remember me</span>
+            </label>
+          </div>
+          <div id="signinError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-submit">Sign In</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" class="auth-form" style="display:none" autocomplete="off">
+          <div class="auth-field">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" placeholder="e.g. Alex Schumacher" required autocomplete="name">
+          </div>
+          <div class="auth-field">
+            <label for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" placeholder="you@company.com" required autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" placeholder="Create a password (min 6 chars)" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="auth-field">
+            <label for="signupTitle">Title</label>
+            <input type="text" id="signupTitle" placeholder="e.g. Sales Rep" required autocomplete="organization-title">
+          </div>
+          <div class="auth-manager-toggle">
+            <label class="auth-checkbox-label">
+              <input type="checkbox" id="signupIsManager">
+              <span>I am a manager</span>
+            </label>
+          </div>
+          <div id="signupError" class="auth-error" style="display:none"></div>
+          <button type="submit" class="auth-submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="showcaseLightbox" class="lightbox" aria-hidden="true">
+    <button class="lightbox-close" aria-label="Close">&times;</button>
+    <img class="lightbox-img" alt="">
+  </div>
+
+  <!-- ======= FEATURE SHOWCASE ======= -->
+  <div class="showcase">
+    <div class="showcase-inner">
+      <h2 class="showcase-heading">See how it works</h2>
+      <p class="showcase-sub">Everything your team needs to stay on pace, in one place.</p>
+
+      <div class="showcase-grid">
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-home.png" role="button" tabindex="0" aria-label="Enlarge Daily Insights screenshot">
+            <img src="./assets/screenshot-home.png" alt="Home view with daily insights, streaks, and coaching" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Daily Insights</h3>
+          <p class="showcase-desc">Streaks, conversion rates, and personalized coaching — every morning when you open the app.</p>
+        </div>
+
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-dashboard.png" role="button" tabindex="0" aria-label="Enlarge Pipeline Dashboard screenshot">
+            <img src="./assets/screenshot-dashboard.png" alt="Dashboard with KPI cards, budget charts, and activity targets" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Pipeline Dashboard</h3>
+          <p class="showcase-desc">Revenue targets, budget tracking, and trend charts that update as you log activity.</p>
+        </div>
+
+        <div class="showcase-item">
+          <div class="showcase-img-wrap" data-lightbox="./assets/screenshot-team.png" role="button" tabindex="0" aria-label="Enlarge Manager Coaching screenshot">
+            <img src="./assets/screenshot-team.png" alt="Team coaching insights and performance summary" loading="lazy">
+            <div class="showcase-zoom-hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          </div>
+          <h3 class="showcase-label">Manager Coaching</h3>
+          <p class="showcase-desc">Team performance at a glance with actionable coaching insights for every rep.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======= APP SHELL (shown when logged in) ======= -->
+<div id="appShell" style="display:none">
+
+<!-- Header -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-left">
+      <img class="logo-img" src="./assets/salesbirdie-logo.png" alt="salesbirdie." />
+    </div>
+    <div class="header-right">
+      <button class="btn-icon save-all-btn" id="saveBtn" aria-label="Save all changes" title="Save all changes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </button>
+      <button class="btn-icon hamburger-btn" id="hamburgerBtn" aria-label="Menu" title="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="hamburger-menu" id="hamburgerMenu" style="displ
