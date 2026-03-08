@@ -2025,6 +2025,7 @@
 
     if (src) {
       var weeklyRev = [];
+      var weeklyDetail = [];
       var totalCalls = 0;
       var totalMeetings = 0;
       var totalProposals = 0;
@@ -2032,21 +2033,32 @@
 
       for (var w = 0; w < WEEKS_PER_QUARTER; w++) {
         var weekRev = 0;
+        var wCalls = 0, wMeetings = 0, wProposals = 0, wPOs = 0;
         for (var d = 0; d < 5; d++) {
           if (src.growthRevData[w]) weekRev += (src.growthRevData[w][d] || 0);
           if (src.maintRevData[w]) weekRev += (src.maintRevData[w][d] || 0);
           if (src.dailyData[w] && src.dailyData[w][d]) {
-            totalCalls += src.dailyData[w][d][0] || 0;
-            totalMeetings += src.dailyData[w][d][1] || 0;
-            totalProposals += src.dailyData[w][d][2] || 0;
-            totalPOs += (src.dailyData[w][d][4] || 0) + (src.dailyData[w][d][6] || 0);
+            var dayC = src.dailyData[w][d][0] || 0;
+            var dayM = src.dailyData[w][d][1] || 0;
+            var dayP = src.dailyData[w][d][2] || 0;
+            var dayPO = (src.dailyData[w][d][4] || 0) + (src.dailyData[w][d][6] || 0);
+            wCalls += dayC;
+            wMeetings += dayM;
+            wProposals += dayP;
+            wPOs += dayPO;
+            totalCalls += dayC;
+            totalMeetings += dayM;
+            totalProposals += dayP;
+            totalPOs += dayPO;
           }
         }
         weeklyRev.push(weekRev);
+        weeklyDetail.push({ calls: wCalls, meetings: wMeetings, proposals: wProposals, pos: wPOs });
       }
 
       return {
         weeklyRev: weeklyRev,
+        weeklyDetail: weeklyDetail,
         calls: totalCalls,
         meetings: totalMeetings,
         proposals: totalProposals,
@@ -2057,9 +2069,14 @@
 
     // No data available for this user
     var emptyRev = [];
-    for (var ew = 0; ew < WEEKS_PER_QUARTER; ew++) emptyRev.push(0);
+    var emptyDetail = [];
+    for (var ew = 0; ew < WEEKS_PER_QUARTER; ew++) {
+      emptyRev.push(0);
+      emptyDetail.push({ calls: 0, meetings: 0, proposals: 0, pos: 0 });
+    }
     return {
       weeklyRev: emptyRev,
+      weeklyDetail: emptyDetail,
       calls: 0,
       meetings: 0,
       proposals: 0,
@@ -2084,6 +2101,7 @@
         email: member.email,
         budget: live.budget,
         weeklyRev: live.weeklyRev,
+        weeklyDetail: live.weeklyDetail,
         calls: live.calls,
         meetings: live.meetings,
         proposals: live.proposals,
@@ -2111,9 +2129,9 @@
     var avgBudget = 0;
     for (var b = 0; b < team.length; b++) { avgBudget += team[b].budget; }
     avgBudget = team.length > 0 ? avgBudget / team.length : 0;
-    var monthlyTarget = avgBudget / 3;
-    var weeklyTarget = monthlyTarget / 4.33;
-    var budgetLine = [weeklyTarget, weeklyTarget * 2, weeklyTarget * 3, weeklyTarget * 4];
+    var weeklyTarget = avgBudget / WEEKS_PER_QUARTER;
+    var budgetLine = [];
+    for (var bl = 0; bl < WEEKS_PER_QUARTER; bl++) { budgetLine.push(weeklyTarget * (bl + 1)); }
 
     var datasets = [];
 
@@ -2260,38 +2278,49 @@
 
     var team = getTeamData();
     var period = state.teamPeriod;
+    var currentWeekIdx = getCurrentQuarterWeekIndex();
+    var currentMonthIdx = getMonthOfWeek(currentWeekIdx); // 0, 1, or 2
     var html = "";
 
     for (var i = 0; i < team.length; i++) {
       var rep = team[i];
-      var totalRev = 0;
-      for (var w = 0; w < rep.weeklyRev.length; w++) { totalRev += rep.weeklyRev[w]; }
+      var periodCalls = 0, periodMeetings = 0, periodProposals = 0, periodPOs = 0, periodRev = 0;
 
-      // Period scaling: data covers full quarter (12 weeks)
-      var periodCalls, periodMeetings, periodProposals, periodPOs, periodRev;
       if (period === "week") {
-        periodCalls = Math.round(rep.calls / WEEKS_PER_QUARTER);
-        periodMeetings = Math.round(rep.meetings / WEEKS_PER_QUARTER);
-        periodProposals = Math.round(rep.proposals / WEEKS_PER_QUARTER);
-        periodPOs = Math.round(rep.pos / WEEKS_PER_QUARTER);
-        periodRev = totalRev / WEEKS_PER_QUARTER;
+        // Sum only the current week
+        periodRev = rep.weeklyRev[currentWeekIdx] || 0;
+        var wd = rep.weeklyDetail ? rep.weeklyDetail[currentWeekIdx] : null;
+        if (wd) {
+          periodCalls = wd.calls;
+          periodMeetings = wd.meetings;
+          periodProposals = wd.proposals;
+          periodPOs = wd.pos;
+        }
       } else if (period === "month") {
-        periodCalls = Math.round(rep.calls / 3);
-        periodMeetings = Math.round(rep.meetings / 3);
-        periodProposals = Math.round(rep.proposals / 3);
-        periodPOs = Math.round(rep.pos / 3);
-        periodRev = totalRev / 3;
+        // Sum weeks in the current month (4 weeks per month)
+        var mStart = currentMonthIdx * 4;
+        var mEnd = mStart + 4;
+        for (var mw = mStart; mw < mEnd; mw++) {
+          periodRev += rep.weeklyRev[mw] || 0;
+          var mwd = rep.weeklyDetail ? rep.weeklyDetail[mw] : null;
+          if (mwd) {
+            periodCalls += mwd.calls;
+            periodMeetings += mwd.meetings;
+            periodProposals += mwd.proposals;
+            periodPOs += mwd.pos;
+          }
+        }
       } else {
         // quarter — raw totals
         periodCalls = rep.calls;
         periodMeetings = rep.meetings;
         periodProposals = rep.proposals;
         periodPOs = rep.pos;
-        periodRev = totalRev;
+        for (var qw = 0; qw < rep.weeklyRev.length; qw++) { periodRev += rep.weeklyRev[qw]; }
       }
 
       var qBudget = rep.budget;
-      var pctBudget = qBudget > 0 ? (periodRev / (period === "week" ? qBudget / 13 : period === "month" ? qBudget / 3 : qBudget)) * 100 : 0;
+      var pctBudget = qBudget > 0 ? (periodRev / (period === "week" ? qBudget / WEEKS_PER_QUARTER : period === "month" ? qBudget / 3 : qBudget)) * 100 : 0;
       var isMe = authState.currentUser && rep.email === authState.currentUser.email;
 
       html += "<tr>";
@@ -3254,32 +3283,33 @@
     csvRows.push([]);
     csvRows.push(["Rep Name", "Calls", "Meetings", "Proposals", "POs", "Revenue", "Budget", "% to Budget"]);
 
+    var currentWeekIdx = getCurrentQuarterWeekIndex();
+    var currentMonthIdx = getMonthOfWeek(currentWeekIdx);
+
     for (var i = 0; i < team.length; i++) {
       var rep = team[i];
-      var totalRev = 0;
-      for (var w = 0; w < rep.weeklyRev.length; w++) { totalRev += rep.weeklyRev[w]; }
+      var pCalls = 0, pMeetings = 0, pProposals = 0, pPOs = 0, pRev = 0, pBudget;
 
-      var pCalls, pMeetings, pProposals, pPOs, pRev, pBudget;
       if (period === "week") {
-        pCalls = Math.round(rep.calls / WEEKS_PER_QUARTER);
-        pMeetings = Math.round(rep.meetings / WEEKS_PER_QUARTER);
-        pProposals = Math.round(rep.proposals / WEEKS_PER_QUARTER);
-        pPOs = Math.round(rep.pos / WEEKS_PER_QUARTER);
-        pRev = totalRev / WEEKS_PER_QUARTER;
-        pBudget = rep.budget / 13;
+        pRev = rep.weeklyRev[currentWeekIdx] || 0;
+        var ewd = rep.weeklyDetail ? rep.weeklyDetail[currentWeekIdx] : null;
+        if (ewd) { pCalls = ewd.calls; pMeetings = ewd.meetings; pProposals = ewd.proposals; pPOs = ewd.pos; }
+        pBudget = rep.budget / WEEKS_PER_QUARTER;
       } else if (period === "month") {
-        pCalls = Math.round(rep.calls / 3);
-        pMeetings = Math.round(rep.meetings / 3);
-        pProposals = Math.round(rep.proposals / 3);
-        pPOs = Math.round(rep.pos / 3);
-        pRev = totalRev / 3;
+        var emStart = currentMonthIdx * 4;
+        var emEnd = emStart + 4;
+        for (var emw = emStart; emw < emEnd; emw++) {
+          pRev += rep.weeklyRev[emw] || 0;
+          var emwd = rep.weeklyDetail ? rep.weeklyDetail[emw] : null;
+          if (emwd) { pCalls += emwd.calls; pMeetings += emwd.meetings; pProposals += emwd.proposals; pPOs += emwd.pos; }
+        }
         pBudget = rep.budget / 3;
       } else {
         pCalls = rep.calls;
         pMeetings = rep.meetings;
         pProposals = rep.proposals;
         pPOs = rep.pos;
-        pRev = totalRev;
+        for (var qrw = 0; qrw < rep.weeklyRev.length; qrw++) { pRev += rep.weeklyRev[qrw]; }
         pBudget = rep.budget;
       }
 
