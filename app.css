@@ -1372,6 +1372,33 @@ table { border-collapse: collapse; width: 100%; }
   color: var(--color-text-faint);
 }
 
+/* ===== AVG SYNC BUTTON ===== */
+.avg-sync-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  transition: opacity var(--transition-interactive), color var(--transition-interactive), background var(--transition-interactive);
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+.avg-sync-btn:hover {
+  opacity: 1;
+  color: var(--color-primary);
+  background: color-mix(in oklch, var(--color-primary) 12%, transparent);
+}
+.avg-sync-btn:active {
+  transform: rotate(-45deg);
+}
+.avg-sync-btn.no-data {
+  opacity: 0.25;
+  cursor: default;
+}
+
 /* ===== KPI GRID ===== */
 .kpi-grid {
   display: grid;

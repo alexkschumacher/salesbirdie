@@ -169,15 +169,38 @@
   /* ========== PIPELINE TARGETS (variable conversions) ========== */
   function getPipelineTargets() {
     var c = state.convRates;
+    var currentWeekIdx = getCurrentQuarterWeekIndex();
+    var weeksRemaining = Math.max(1, WEEKS_PER_QUARTER - currentWeekIdx);
+
+    // Calculate revenue already booked this quarter
+    var growthRevBooked = 0, maintRevBooked = 0;
+    for (var tw = 0; tw < WEEKS_PER_QUARTER; tw++) {
+      for (var td = 0; td < 5; td++) {
+        growthRevBooked += (state.growthRevData[tw] ? (state.growthRevData[tw][td] || 0) : 0);
+        maintRevBooked += (state.maintRevData[tw] ? (state.maintRevData[tw][td] || 0) : 0);
+      }
+    }
+
+    // Remaining revenue needed, spread over remaining weeks
+    var growthRemaining = Math.max(0, state.quarterlyBudget * state.growthPct - growthRevBooked);
+    var maintRemaining = Math.max(0, state.quarterlyBudget * state.maintPct - maintRevBooked);
+    var growthPerWeek = growthRemaining / weeksRemaining;
+    var maintPerWeek = maintRemaining / weeksRemaining;
+
+    // Use actual avg sale if available, else fallback to input
+    var avgSale = state.avgSaleSize;
+    var actualAvg = getActualAvgSale();
+    if (actualAvg > 0) avgSale = actualAvg;
+
     // Growth path
-    var growthDealsPerWeek = state.avgSaleSize > 0 ? getGrowthWeeklyBudget() / state.avgSaleSize : 0;
+    var growthDealsPerWeek = avgSale > 0 ? growthPerWeek / avgSale : 0;
     var closeNeeded = c[3] > 0 ? growthDealsPerWeek / c[3] : 0;
     var proposalsNeeded = c[2] > 0 ? closeNeeded / c[2] : 0;
     var meetingsNeeded = c[1] > 0 ? proposalsNeeded / c[1] : 0;
     var coldCallsNeeded = c[0] > 0 ? meetingsNeeded / c[0] : 0;
 
     // Maint path
-    var maintDealsPerWeek = state.avgSaleSize > 0 ? getMaintWeeklyBudget() / state.avgSaleSize : 0;
+    var maintDealsPerWeek = avgSale > 0 ? maintPerWeek / avgSale : 0;
     var existCallsNeeded = c[4] > 0 ? maintDealsPerWeek / c[4] : 0;
 
     // Returns array: [coldCalls, meetings, proposals, closeMtgs, growthPOs, existCalls, maintPOs, unused]
@@ -3373,6 +3396,29 @@
     aInput.addEventListener("input", handleBudgetInput);
     qInput.addEventListener("blur", formatBudgetInput);
     aInput.addEventListener("blur", formatBudgetInput);
+
+    // Avg Sale sync button
+    var syncBtn = document.getElementById("avgSyncBtn");
+    if (syncBtn) {
+      // Update button state based on whether actual data exists
+      function updateSyncBtn() {
+        var actual = getActualAvgSale();
+        syncBtn.classList.toggle("no-data", actual <= 0);
+        syncBtn.title = actual > 0 ? "Use actual avg: " + formatCurrency(actual) : "No PO data yet";
+      }
+      updateSyncBtn();
+      syncBtn.addEventListener("click", function () {
+        var actual = getActualAvgSale();
+        if (actual <= 0) return;
+        state.avgSaleSize = Math.round(actual);
+        aInput.value = fmtInput(state.avgSaleSize);
+        renderAll();
+        markUnsaved();
+      });
+      // Re-check whenever data changes
+      var origMarkUnsaved = markUnsaved;
+      markUnsaved = function () { origMarkUnsaved(); updateSyncBtn(); };
+    }
 
     // Growth / Maintenance split inputs
     var growthInput = document.getElementById("growthPctInput");
